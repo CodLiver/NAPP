@@ -183,6 +183,8 @@ void updateBody() {
 	double dists[3] = { 0 };//dx,dy,dz
 	int aPosK = 0;
 	int aPosI = 0;
+	double divver=0.0;
+
 
 	for (int k = 0; k < NumberOfBodies; k++)
 	{
@@ -201,13 +203,15 @@ void updateBody() {
 				dists[2] * dists[2]
 			);
 
-			acceleration[aPosK]   += dists[0] * mass[i]  / distance / distance / distance;
-			acceleration[aPosK+1] += dists[1] * mass[i]  / distance / distance / distance;
-			acceleration[aPosK+2] += dists[2] * mass[i]  / distance / distance / distance;
+			divver = distance * distance * distance;
 
-			acceleration[aPosI]   -= dists[0] * mass[k] / distance / distance / distance;
-			acceleration[aPosI+1] -= dists[1] * mass[k] / distance / distance / distance;
-			acceleration[aPosI+2] -= dists[2] * mass[k] / distance / distance / distance;
+			acceleration[aPosK] += dists[0] * mass[i] / divver;
+			acceleration[aPosK + 1] += dists[1] * mass[i] / divver;
+			acceleration[aPosK + 2] += dists[2] * mass[i] / divver;
+
+			acceleration[aPosI] -= dists[0] * mass[k] / divver;
+			acceleration[aPosI + 1] -= dists[1] * mass[k] / divver;
+			acceleration[aPosI + 2] -= dists[2] * mass[k] / divver;
 
 			minDx = std::min(minDx, distance);
 		}
@@ -227,6 +231,7 @@ void updateBody() {
 
 	t += timeStepSize;
 }
+
 
 
 /**
