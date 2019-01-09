@@ -4,18 +4,11 @@
 //
 // Run it with
 //
-// ./assignment (linux) or assigment.exe .. var
+// ./assignment
 //
 // There should be a result.pvd file that you can open with Paraview.
 // Sometimes, Paraview requires to select the representation "Point Gaussian"
 // to see something meaningful.
-//
-//
-// installed mingw, g++ in D/. for anything: open mingw compiler go to ./NAPP by c\ run the above command.
-// this is a project under repo of vs. the other is under NAPP
-// to add arg: go to properties -> debug
-//
-// before submit anything, test with linux, the given code etc. read assignment. MinGW for G++ which linux already has, ParaView for modeling
 //
 // (C) 2018 Tobias Weinzierl
 
@@ -26,9 +19,7 @@
 #include <math.h>
 #include <limits>
 
-#include <algorithm>//added
 
-//global data
 double t = 0;
 double tFinal = 0;
 double tPlot = 0;
@@ -69,7 +60,7 @@ double   minDx;
 
 
 /**
- * Set up scenario from the command line. scenario parser: timeInc, maxtime, X-xyz V:xyz M
+ * Set up scenario from the command line.
  *
  * This operation is not to be changed in the assignment.
  */
@@ -122,7 +113,6 @@ std::ofstream videoFile;
 
 
 /**
- * opens paraview file
  * This operation is not to be changed in the assignment.
  */
 void openParaviewVideoFile() {
@@ -137,7 +127,6 @@ void openParaviewVideoFile() {
 
 
 /**
- * closes paraview file
  * This operation is not to be changed in the assignment.
  */
 void closeParaviewVideoFile() {
@@ -147,7 +136,6 @@ void closeParaviewVideoFile() {
 
 
 /**
- * paraview instance maker with xml
  * The file format is documented at http://www.vtk.org/wp-content/uploads/2015/04/file-formats.pdf
  *
  * This operation is not to be changed in the assignment.
@@ -162,7 +150,7 @@ void printParaviewSnapshot() {
 		<< "<PolyData>" << std::endl
 		<< " <Piece NumberOfPoints=\"" << NumberOfBodies << "\">" << std::endl
 		<< "  <Points>" << std::endl
-		<< "   <DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">";
+		<< "   <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">";
 
 	for (int i = 0; i < NumberOfBodies; i++) {
 		out << x[i][0]
@@ -188,58 +176,62 @@ void printParaviewSnapshot() {
  * This is the only operation you are allowed to change in the assignment.
  */
 void updateBody() {
-	//declares vars
 	maxV = 0.0;
 	minDx = std::numeric_limits<double>::max();
 
-	//declares 3 way forces, x,y,z
-	double force[3];
-	force[0] = 0.0;
-	force[1] = 0.0;
-	force[2] = 0.0;
+	double acceleration[3*NumberOfBodies] = { 0 };//ax,ay,az,...
+	double dists[3] = { 0 };//dx,dy,dz
+	int aPosK = 0;
+	int aPosI = 0;
 
-	//for each body, calcs distance to all and updates 3way force with formula.
-	/*Working area*/
+	for (int k = 0; k < NumberOfBodies; k++)
+	{
+		aPosK = k * NumberOfBodies;
+		for (int i = k+1; i < NumberOfBodies; i++) {
+			aPosI = i * NumberOfBodies;
 
-	for (int k = 0; k < NumberOfBodies; k++) {
 
-		for (int i = 0; i < NumberOfBodies && i != k; i++) {
+			dists[0] = x[i][0] - x[k][0];//x
+			dists[1] = x[i][1] - x[k][1];//y
+			dists[2] = x[i][2] - x[k][2];//z
+
 			const double distance = sqrt(
-				(x[k][0] - x[i][0]) * (x[k][0] - x[i][0]) +
-				(x[k][1] - x[i][1]) * (x[k][1] - x[i][1]) +
-				(x[k][2] - x[i][2]) * (x[k][2] - x[i][2])
+				dists[0] * dists[0] +
+				dists[1] * dists[1] +
+				dists[2] * dists[2]
 			);
 
-			force[0] += (x[i][0] - x[k][0]) * mass[i] * mass[k] / distance / distance / distance;
-			force[1] += (x[i][1] - x[k][1]) * mass[i] * mass[k] / distance / distance / distance;
-			force[2] += (x[i][2] - x[k][2]) * mass[i] * mass[k] / distance / distance / distance;
+			acceleration[aPosK]   += dists[0] * mass[i]  / distance / distance / distance;
+			acceleration[aPosK+1] += dists[1] * mass[i]  / distance / distance / distance;
+			acceleration[aPosK+2] += dists[2] * mass[i]  / distance / distance / distance;
+
+			acceleration[aPosI]   -= dists[0] * mass[k] / distance / distance / distance;
+			acceleration[aPosI+1] -= dists[1] * mass[k] / distance / distance / distance;
+			acceleration[aPosI+2] -= dists[2] * mass[k] / distance / distance / distance;
 
 			minDx = std::min(minDx, distance);
-
 		}
 
-		//updates dist with time*v aka x=V*t
 		x[k][0] = x[k][0] + timeStepSize * v[k][0];
 		x[k][1] = x[k][1] + timeStepSize * v[k][1];
 		x[k][2] = x[k][2] + timeStepSize * v[k][2];
 
-		//updates velo with time-force aka v=F*t/m  = ma*t/m = x/t^2*t
-		v[k][0] = v[k][0] + timeStepSize * force[0] / mass[k];
-		v[k][1] = v[k][1] + timeStepSize * force[1] / mass[k];
-		v[k][2] = v[k][2] + timeStepSize * force[2] / mass[k];
+		v[k][0] = v[k][0] + timeStepSize * acceleration[aPosK];
+		v[k][1] = v[k][1] + timeStepSize * acceleration[aPosK + 1];
+		v[k][2] = v[k][2] + timeStepSize * acceleration[aPosK + 2];
 
-		// takes sqrt of all way v's to get directional v.
 		maxV = std::max(maxV,std::sqrt(v[k][0] * v[k][0] + v[k][1] * v[k][1] + v[k][2] * v[k][2]));
 
 	}
-	//inc of time 
+
+
 	t += timeStepSize;
 }
 
 
 /**
  * Main routine.
- * result.pnv maker
+ *
  * Not to be changed in assignment.
  */
 int main(int argc, char** argv) {
@@ -294,5 +286,4 @@ int main(int argc, char** argv) {
 	closeParaviewVideoFile();
 
 	return 0;
-
 }
