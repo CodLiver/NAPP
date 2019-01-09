@@ -229,7 +229,7 @@ void updateBody() {
 		v[k][2] = v[k][2] + timeStepSize * force[2] / mass[k];
 
 		// takes sqrt of all way v's to get directional v.
-		maxV = std::sqrt(v[k][0] * v[k][0] + v[k][1] * v[k][1] + v[k][2] * v[k][2]);
+		maxV = std::max(maxV,std::sqrt(v[k][0] * v[k][0] + v[k][1] * v[k][1] + v[k][2] * v[k][2]));
 
 	}
 	//inc of time 
