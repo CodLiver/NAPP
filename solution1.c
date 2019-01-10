@@ -220,13 +220,13 @@ void updateBody() {
 			minDx = std::min(minDx, distance);
 		}
 
-		x[k][0] = x[k][0] + timeStepSize * v[k][0];
-		x[k][1] = x[k][1] + timeStepSize * v[k][1];
-		x[k][2] = x[k][2] + timeStepSize * v[k][2];
+		x[k][0] += timeStepSize * v[k][0];
+		x[k][1] += timeStepSize * v[k][1];
+		x[k][2] += timeStepSize * v[k][2];
 
-		v[k][0] = v[k][0] + timeStepSize * acceleration[aPosK];
-		v[k][1] = v[k][1] + timeStepSize * acceleration[aPosK + 1];
-		v[k][2] = v[k][2] + timeStepSize * acceleration[aPosK + 2];
+		v[k][0] += timeStepSize * acceleration[aPosK];
+		v[k][1] += timeStepSize * acceleration[aPosK + 1];
+		v[k][2] += timeStepSize * acceleration[aPosK + 2];
 
 		maxV = std::max(maxV,std::sqrt(v[k][0] * v[k][0] + v[k][1] * v[k][1] + v[k][2] * v[k][2]));
 
