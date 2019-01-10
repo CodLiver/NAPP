@@ -4,18 +4,11 @@
 //
 // Run it with
 //
-// ./assignment (linux) or assigment.exe .. var
+// ./assignment
 //
 // There should be a result.pvd file that you can open with Paraview.
 // Sometimes, Paraview requires to select the representation "Point Gaussian"
 // to see something meaningful.
-//
-//
-// installed mingw, g++ in D/. for anything: open mingw compiler go to ./NAPP by c\ run the above command.
-// this is a project under repo of vs. the other is under NAPP
-// to add arg: go to properties -> debug
-//
-// before submit anything, test with linux, the given code etc. read assignment. MinGW for G++ which linux already has, ParaView for modeling
 //
 // (C) 2018 Tobias Weinzierl
 
@@ -26,9 +19,9 @@
 #include <math.h>
 #include <limits>
 
-#include <algorithm>//added
+#include <time.h>//test
 
-//global data
+
 double t = 0;
 double tFinal = 0;
 double tPlot = 0;
@@ -69,7 +62,7 @@ double   minDx;
 
 
 /**
- * Set up scenario from the command line. scenario parser: timeInc, maxtime, X-xyz V:xyz M
+ * Set up scenario from the command line.
  *
  * This operation is not to be changed in the assignment.
  */
@@ -82,12 +75,8 @@ void setUp(int argc, char** argv) {
 
 	int readArgument = 1;
 
-	//timeStepSize = std::stof(argv[readArgument]);
 	tPlotDelta = std::stof(argv[readArgument]); readArgument++;
-
-	//printf("setup tplotdelta %f \n",tPlotDelta);
 	tFinal = std::stof(argv[readArgument]); readArgument++;
-	//printf("setup tfinal %f \n", tFinal);
 
 	for (int i = 0; i < NumberOfBodies; i++) {
 		x[i] = new double[3];
@@ -126,7 +115,6 @@ std::ofstream videoFile;
 
 
 /**
- * opens paraview file
  * This operation is not to be changed in the assignment.
  */
 void openParaviewVideoFile() {
@@ -141,7 +129,6 @@ void openParaviewVideoFile() {
 
 
 /**
- * closes paraview file
  * This operation is not to be changed in the assignment.
  */
 void closeParaviewVideoFile() {
@@ -151,7 +138,6 @@ void closeParaviewVideoFile() {
 
 
 /**
- * paraview instance maker with xml
  * The file format is documented at http://www.vtk.org/wp-content/uploads/2015/04/file-formats.pdf
  *
  * This operation is not to be changed in the assignment.
@@ -166,7 +152,7 @@ void printParaviewSnapshot() {
 		<< "<PolyData>" << std::endl
 		<< " <Piece NumberOfPoints=\"" << NumberOfBodies << "\">" << std::endl
 		<< "  <Points>" << std::endl
-		<< "   <DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">";
+		<< "   <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">";
 
 	for (int i = 0; i < NumberOfBodies; i++) {
 		out << x[i][0]
@@ -186,9 +172,9 @@ void printParaviewSnapshot() {
 	videoFile << "<DataSet timestep=\"" << counter << "\" group=\"\" part=\"0\" file=\"" << filename.str() << "\"/>" << std::endl;
 }
 
-double lennardJones(double distance) {
+double lennardJones(double distance, double x) {
 
-	if (distance)
+	/*if (distance)
 	{
 		//printf("d %f\n", distance);
 		double e = 3.4e-10;
@@ -200,75 +186,156 @@ double lennardJones(double distance) {
 	}
 	else {
 		return 0;
-	}
-	
+	}*/
+	double distDx = x / (distance*distance);
+	double e = 3.4e-10;
+	double mult = 1.65e-21*distDx;
+	double mult6 = 48*mult*mult*mult*mult*mult*mult;
+	return (e*mult6*distDx)*(mult6 - 0.5);
+		
+	//return (-4 * 3.4e-10*x)*(-12 * pow((1.65e-21*x/ (distance*distance)), 12) + 6 * pow((1.65e-21 *x / (distance*distance)), 6)) / (distance*distance);
+
+
 }
 
 /**
  * This is the only operation you are allowed to change in the assignment.
  */
 void updateBody() {
-	//declares vars
 	maxV = 0.0;
 	minDx = std::numeric_limits<double>::max();
 
-	//declares 3 way forces, x,y,z
-	double force[1];
-	force[0] = 0.0;
-	force[1] = 0.0;
-	force[2] = 0.0;
+	double force[3 * NumberOfBodies] = { 0 };//ax,ay,az,...
+	double dists[6] = { 0 };//dx,dy,dz
+	int aPosK = 0;
+	int aPosI = 0;
+	int l = 0;
 
-	//for each body, calcs distance to all and updates 3way force with formula.
-	/*Working area*/
 
-	for (int k = 0; k < NumberOfBodies; k++) {
+	for (int k = 0; k < NumberOfBodies; ++k)
+	{
+		aPosK = k * NumberOfBodies;
+		for (int i = k + 1; i < NumberOfBodies; ++i) {
+			aPosI = i * NumberOfBodies;
 
-		for (int i = 0; i < NumberOfBodies && i != k; i++) {
+
+			dists[0] = x[i][0] - x[k][0];//x
+			dists[1] = x[i][1] - x[k][1];//y
+			dists[2] = x[i][2] - x[k][2];//z
+
 			const double distance = sqrt(
-				(x[k][0] - x[i][0]) * (x[k][0] - x[i][0]) +
-				(x[k][1] - x[i][1]) * (x[k][1] - x[i][1]) +
-				(x[k][2] - x[i][2]) * (x[k][2] - x[i][2])
+				dists[0] * dists[0] +
+				dists[1] * dists[1] +
+				dists[2] * dists[2]
 			);
 
-			//printf("d0 %f\n", x[i][0] - x[k][0]);
-			force[0] += lennardJones(x[i][0] - x[k][0]); //* mass[i] * mass[k] / distance / distance / distance;
-			//printf("res0 %f\n", lennardJones(x[i][0] - x[k][0]));
-			//printf("d1 %f\n", x[i][1] - x[k][1]);
-			force[1] += lennardJones(x[i][1] - x[k][1]); //* mass[i] * mass[k] / distance / distance / distance;
-			//printf("res1 %f\n", lennardJones(x[i][1] - x[k][1]));
-			//printf("d2 %f\n", x[i][2] - x[k][2]);
-			force[2] += lennardJones(x[i][2] - x[k][2]); //* mass[i] * mass[k] / distance / distance / distance;
-			//printf("res2 %f\n", lennardJones(x[i][2] - x[k][2]));
+
+			dists[3] = lennardJones(distance, dists[0]);
+			dists[4] = lennardJones(distance, dists[1]);
+			dists[5] = lennardJones(distance, dists[2]);
+
+			for (l = 0; l < 3; ++l)
+			{
+				force[aPosK+l] += dists[3+l];
+				force[aPosI + l] -= dists[3+l];
+			}
+
+			/*force[aPosK] += dist[3];
+			force[aPosK + 1] += dist[4];
+			force[aPosK + 2] += dist[5];
+
+			force[aPosI]     -= dist[3];
+			force[aPosI + 1] -= dist[4];
+			force[aPosI + 2] -= dist[5];*/
+
+
 
 			minDx = std::min(minDx, distance);
-
 		}
 
-		//updates dist with time*v aka x=V*t
-		x[k][0] = x[k][0] + tPlotDelta * v[k][0];//timeStepSize
-		x[k][1] = x[k][1] + tPlotDelta * v[k][1];
-		x[k][2] = x[k][2] + tPlotDelta * v[k][2];
+		x[k][0] += timeStepSize * v[k][0];
+		x[k][1] += timeStepSize * v[k][1];
+		x[k][2] += timeStepSize * v[k][2];
 
-		//updates velo with time-force aka v=F*t/m  = ma*t/m = x/t^2*t
-		v[k][0] = v[k][0] + tPlotDelta * force[0] / mass[k];
-		v[k][1] = v[k][1] + tPlotDelta * force[1] / mass[k];
-		v[k][2] = v[k][2] + tPlotDelta * force[2] / mass[k];
+		v[k][0] += timeStepSize * force[aPosK] / mass[k];
+		v[k][1] += timeStepSize * force[aPosK + 1] / mass[k];
+		v[k][2] += timeStepSize * force[aPosK + 2] / mass[k];
 
-		// takes sqrt of all way v's to get directional v.
-		
-		//maxV = v[k][0];
-
+		maxV = std::max(maxV, std::sqrt(v[k][0] * v[k][0] + v[k][1] * v[k][1] + v[k][2] * v[k][2]));
+		//printf("reached\n");
 	}
-	maxV = std::sqrt(v[k][0] * v[k][0] + v[k][1] * v[k][1] + v[k][2] * v[k][2]);
-	//inc of time 
-	//printf("isnide t: %f += tPlotDelta: %f \n", t, tPlotDelta);
-	t += tPlotDelta;//timeStepSize;
+	/*for (int i = 0; i < 3 * NumberOfBodies; i++)
+	{
+		if (i%3==0 && i>0)
+		{
+			printf("\n");
+			printf("%f,", acceleration[i]);
+		}
+		else {
+			printf("%f,", acceleration[i]);
+		}
+		
+	}
+	printf("done\n");*/
+
+	t += timeStepSize;
 }
 
+/*
+
+	100 000 1
+	010 000 2
+	001 000 3
+	101 000 1
+	110 000 2
+	111 000 3
+	011 000 1
+	002 000 2
+	020 000 3
+	200 000 1
+	202 000 2
+	220 000 3
+	222 000 1
+	022 000 2
+
+
+	1.0 0.0 0.0  1.0 0.0 1.0 1.0
+	0.0 1.0 0.0  0.0 1.0 0.0 2.0
+	0.0 0.0 1.0  0.0 0.0 2.0 3.0
+	1.0 0.0 1.0  0.0 0.0 1.0 1.0
+	1.0 1.0 0.0  0.0 1.0 0.0 2.0
+	1.0 1.0 1.0  0.0 0.0 2.0 3.0
+	0.0 1.0 1.0  0.0 0.0 1.0 1.0
+	0.0 0.0 2.0  0.0 1.0 0.0 2.0
+	0.0 2.0 0.0  0.0 0.0 2.0 3.0
+	2.0 0.0 0.0  0.0 0.0 1.0 1.0
+	2.0 0.0 2.0  0.0 1.0 0.0 2.0
+	2.0 2.0 0.0  0.0 0.0 2.0 3.0
+	2.0 2.0 2.0  0.0 0.0 1.0 1.0
+	0.0 2.0 2.0  0.0 1.0 0.0 2.0
+
+	1.0 0.0 0.0  1.0 0.0 1.0 1.0 0.0 1.0 0.0  0.0 1.0 0.0 2.0 0.0 0.0 1.0  0.0 0.0 2.0 3.0 1.0 0.0 1.0  0.0 0.0 1.0 1.0 1.0 1.0 0.0  0.0 1.0 0.0 2.0 1.0 1.0 1.0  0.0 0.0 2.0 3.0 0.0 1.0 1.0  0.0 0.0 1.0 1.0 0.0 0.0 2.0  0.0 1.0 0.0 2.0 0.0 2.0 0.0  0.0 0.0 2.0 3.0 2.0 0.0 0.0  0.0 0.0 1.0 1.0 2.0 0.0 2.0  0.0 1.0 0.0 2.0 2.0 2.0 0.0  0.0 0.0 2.0 3.0 2.0 2.0 2.0  0.0 0.0 1.0 1.0 0.0 2.0 2.0  0.0 1.0 0.0 2.0
+
+	10.0 0.0 0.0  1.0 0.0 1.0 1.0
+	0.0 3.0 0.0  0.0 1.0 0.0 2.0
+	0.0 0.0 5.0  0.0 0.0 2.0 3.0
+	1.0 0.0 1.0  0.0 0.0 1.0 1.0
+	15.0 6.0 0.0  0.0 1.0 0.0 2.0
+	10.0 1.0 1.0  0.0 0.0 2.0 3.0
+	0.0 7.0 12.0  0.0 0.0 1.0 1.0
+	0.0 0.0 3.0  0.0 1.0 0.0 2.0
+	0.0 2.0 0.0  0.0 0.0 2.0 3.0
+	4.0 0.0 0.0  0.0 0.0 1.0 1.0
+	8.0 0.0 17.0  0.0 1.0 0.0 2.0
+	11.0 2.0 0.0  0.0 0.0 2.0 3.0
+	9.0 17.0 2.0  0.0 0.0 1.0 1.0
+	0.0 15.0 12.0  0.0 1.0 0.0 2.0
+
+*/
 
 /**
  * Main routine.
- * result.pnv maker
+ *
  * Not to be changed in assignment.
  */
 int main(int argc, char** argv) {
@@ -293,36 +360,40 @@ int main(int argc, char** argv) {
 
 	setUp(argc, argv);
 
-	openParaviewVideoFile();
+	openParaviewVideoFile(); //test
 
 	int snapshotCounter = 0;
 	if (t > tPlot) {
-		printParaviewSnapshot();
+		printParaviewSnapshot(); //test
 		std::cout << "plotted initial setup" << std::endl;
 		tPlot = tPlotDelta;
 	}
-	
+
+	struct timespec start, end;
+
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
 	int timeStepCounter = 0;
 	while (t <= tFinal) {
 		updateBody();
 		timeStepCounter++;
 		if (t >= tPlot) {
-			printParaviewSnapshot();
-			std::cout << "plot next snapshot"
+			printParaviewSnapshot(); //test
+			/*std::cout << "plot next snapshot"
 				<< ",\t time step=" << timeStepCounter
 				<< ",\t t=" << t
 				<< ",\t dt=" << timeStepSize
 				<< ",\t v_max=" << maxV
 				<< ",\t dx_min=" << minDx
-				<< std::endl;
+				<< std::endl;*/
 
 			tPlot += tPlotDelta;
-			//printf("tPlot += tPlotDelta -> %f+=%f,,,,,timeStepSize %f \n", tPlot,tPlotDelta,timeStepSize);
 		}
 	}
 
-	closeParaviewVideoFile();
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
+	//https://stackoverflow.com/questions/16231110/fast-way-to-replace-elements-in-array-c
+	printf("size: %f\t nsec: %09zu\n", tFinal / tPlotDelta, (end.tv_sec - start.tv_sec) * 1000000000 + end.tv_nsec - start.tv_nsec);
+	closeParaviewVideoFile(); //test
 
 	return 0;
-
 }
