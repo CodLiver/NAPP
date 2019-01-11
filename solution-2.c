@@ -190,8 +190,8 @@ double lennardJones(double distance, double x) {
 	double distDx = x / (distance*distance);
 	double e = 1.65e-21;
 	double mult = 3.4e-10*distDx;
-	double mult6 = 48 * mult*mult*mult*mult*mult*mult;
-	return (e*mult6*distDx)*(mult6 - 0.5);
+	double mult6 = mult*mult*mult*mult*mult*mult;
+	return (48 * e*mult6*distDx)*(mult6 - 0.5);
 		
 	//return (-4 * 3.4e-10*x)*(-12 * pow((1.65e-21*x/ (distance*distance)), 12) + 6 * pow((1.65e-21 *x / (distance*distance)), 6)) / (distance*distance);
 
