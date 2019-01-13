@@ -199,6 +199,8 @@ void updateBody() {
 	int aPosI = 0;
 	int l = 0;
 
+	// printf("%f\n", timeStepSize);
+
 		for (int k = 0; k < NumberOfBodies; ++k)
 		{
 			aPosK = k * NumberOfBodies;
@@ -231,11 +233,11 @@ void updateBody() {
 				minDx = std::min(minDx, distance);
 			}
 
-			x[k][0] += timeStepSize * v[k][0];
+			x[k][0] += timeStepSize * v[k][0];//15.75 1/8*20>1/4 16
 			x[k][1] += timeStepSize * v[k][1];
 			x[k][2] += timeStepSize * v[k][2];
 
-			v[k][0] += timeStepSize * force[aPosK] / mass[k];
+			v[k][0] += timeStepSize * force[aPosK] / mass[k];//v 2->2.2
 			v[k][1] += timeStepSize * force[aPosK + 1] / mass[k];
 			v[k][2] += timeStepSize * force[aPosK + 2] / mass[k];
 
@@ -248,20 +250,41 @@ void updateBody() {
 		{
 			aPosK = k * NumberOfBodies;
 
+			x[k][0] -= timeStepSize * v[k][0];//1*2=2 -2 14
+			x[k][1] -= timeStepSize * v[k][1];
+			x[k][2] -= timeStepSize * v[k][2];
+
 			v[k][0] -= timeStepSize * force[aPosK] / mass[k];
 			v[k][1] -= timeStepSize * force[aPosK + 1] / mass[k];
 			v[k][2] -= timeStepSize * force[aPosK + 2] / mass[k];
 
 		}
 
-		if (timeStepSize * maxV>minDx){
+		if (timeStepSize * maxV>=minDx){//worked
+
+			timeStepSize/=8;//1->1/8
+
+			for (int k = 0; k < NumberOfBodies; ++k)
+		{
+				aPosK = k * NumberOfBodies;
+			x[k][0] += 7*timeStepSize * v[k][0];//14 +  7/8 = 15.70
+			x[k][1] += 7*timeStepSize * v[k][1];
+			x[k][2] += 7*timeStepSize * v[k][2];
+		}
 
 			printf("again rule \n");
-			timeStepSize/=8;
+
 			updateBody();
 
 		}else{
 
+			for (int k = 0; k < NumberOfBodies; ++k)
+		{
+				aPosK = k * NumberOfBodies;
+			x[k][0] += timeStepSize * v[k][0];
+			x[k][1] += timeStepSize * v[k][1];
+			x[k][2] += timeStepSize * v[k][2];
+		}
 			if (minDx<1e-9){
 
 				// printf("min rule \n");
@@ -285,11 +308,6 @@ void updateBody() {
 			t += timeStepSize;
 
 		}
-
-
-
-
-
 
 	}
 
@@ -341,9 +359,12 @@ int main(int argc, char** argv) {
 		updateBody();
 		// #pragma omp critical
 		timeStepCounter++;
+
 		if (t >= tPlot) {
+			// printf("%f\n", timeStepCounter);
 			//printParaviewSnapshot(); //test
-			printf("%f,%f,%f,%f,%f\n", timeStepCounter,t,timeStepSize, maxV,minDx);
+			// printf("%f,%f,%f,%f,%f\n", timeStepCounter,t,timeStepSize, maxV,minDx);
+			// printf("%f\n", timeStepSize);
 		/*	std::cout << "plot next snapshot"
 				<< ",\t time step=" << timeStepCounter
 				<< ",\t t=" << t
