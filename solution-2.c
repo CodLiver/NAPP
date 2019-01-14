@@ -205,18 +205,16 @@ void updateBody() {
 	maxV = 0.0;
 	minDx = std::numeric_limits<double>::max();
 
-	double force[3 * NumberOfBodies] = { 0 };//ax,ay,az,...
-	double dists[6] = { 0 };//dx,dy,dz
-	int aPosK = 0;
-	int aPosI = 0;
-	int l = 0;
+	double force[3*NumberOfBodies] = { 0 };//ax,ay,az,...
 
 
-	for (int k = 0; k < NumberOfBodies; ++k)
+	for (int k = 0; k < NumberOfBodies; k++)
 	{
-		aPosK = k * 3;
-		for (int i = k + 1; i < NumberOfBodies; ++i) {
-			aPosI = i * 3;
+		int aPosK = k * 3;
+		double dists[6];
+		
+		for (int i = k+1; i < NumberOfBodies; i++) {
+			int aPosI = i * 3;
 
 
 			dists[0] = x[i][0] - x[k][0];//x
@@ -239,16 +237,6 @@ void updateBody() {
 				force[aPosK+l] += dists[3+l];
 				force[aPosI + l] -= dists[3+l];
 			}
-
-			/*force[aPosK] += dist[3];
-			force[aPosK + 1] += dist[4];
-			force[aPosK + 2] += dist[5];
-
-			force[aPosI]     -= dist[3];
-			force[aPosI + 1] -= dist[4];
-			force[aPosI + 2] -= dist[5];*/
-
-
 
 			minDx = std::min(minDx, distance);
 		}
@@ -280,58 +268,6 @@ void updateBody() {
 
 	t += timeStepSize;
 }
-
-/*
-
-	100 000 1
-	010 000 2
-	001 000 3
-	101 000 1
-	110 000 2
-	111 000 3
-	011 000 1
-	002 000 2
-	020 000 3
-	200 000 1
-	202 000 2
-	220 000 3
-	222 000 1
-	022 000 2
-
-
-	1.0 0.0 0.0  1.0 0.0 1.0 1.0
-	0.0 1.0 0.0  0.0 1.0 0.0 2.0
-	0.0 0.0 1.0  0.0 0.0 2.0 3.0
-	1.0 0.0 1.0  0.0 0.0 1.0 1.0
-	1.0 1.0 0.0  0.0 1.0 0.0 2.0
-	1.0 1.0 1.0  0.0 0.0 2.0 3.0
-	0.0 1.0 1.0  0.0 0.0 1.0 1.0
-	0.0 0.0 2.0  0.0 1.0 0.0 2.0
-	0.0 2.0 0.0  0.0 0.0 2.0 3.0
-	2.0 0.0 0.0  0.0 0.0 1.0 1.0
-	2.0 0.0 2.0  0.0 1.0 0.0 2.0
-	2.0 2.0 0.0  0.0 0.0 2.0 3.0
-	2.0 2.0 2.0  0.0 0.0 1.0 1.0
-	0.0 2.0 2.0  0.0 1.0 0.0 2.0
-
-	1.0 0.0 0.0  1.0 0.0 1.0 1.0 0.0 1.0 0.0  0.0 1.0 0.0 2.0 0.0 0.0 1.0  0.0 0.0 2.0 3.0 1.0 0.0 1.0  0.0 0.0 1.0 1.0 1.0 1.0 0.0  0.0 1.0 0.0 2.0 1.0 1.0 1.0  0.0 0.0 2.0 3.0 0.0 1.0 1.0  0.0 0.0 1.0 1.0 0.0 0.0 2.0  0.0 1.0 0.0 2.0 0.0 2.0 0.0  0.0 0.0 2.0 3.0 2.0 0.0 0.0  0.0 0.0 1.0 1.0 2.0 0.0 2.0  0.0 1.0 0.0 2.0 2.0 2.0 0.0  0.0 0.0 2.0 3.0 2.0 2.0 2.0  0.0 0.0 1.0 1.0 0.0 2.0 2.0  0.0 1.0 0.0 2.0
-
-	10.0 0.0 0.0  1.0 0.0 1.0 1.0
-	0.0 3.0 0.0  0.0 1.0 0.0 2.0
-	0.0 0.0 5.0  0.0 0.0 2.0 3.0
-	1.0 0.0 1.0  0.0 0.0 1.0 1.0
-	15.0 6.0 0.0  0.0 1.0 0.0 2.0
-	10.0 1.0 1.0  0.0 0.0 2.0 3.0
-	0.0 7.0 12.0  0.0 0.0 1.0 1.0
-	0.0 0.0 3.0  0.0 1.0 0.0 2.0
-	0.0 2.0 0.0  0.0 0.0 2.0 3.0
-	4.0 0.0 0.0  0.0 0.0 1.0 1.0
-	8.0 0.0 17.0  0.0 1.0 0.0 2.0
-	11.0 2.0 0.0  0.0 0.0 2.0 3.0
-	9.0 17.0 2.0  0.0 0.0 1.0 1.0
-	0.0 15.0 12.0  0.0 1.0 0.0 2.0
-
-*/
 
 /**
  * Main routine.
@@ -391,7 +327,6 @@ int main(int argc, char** argv) {
 	}
 
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
-	//https://stackoverflow.com/questions/16231110/fast-way-to-replace-elements-in-array-c
 	printf("size: %f\t nsec: %09zu\n", tFinal / tPlotDelta, (end.tv_sec - start.tv_sec) * 1000000000 + end.tv_nsec - start.tv_nsec);
 	closeParaviewVideoFile(); //test
 
