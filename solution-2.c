@@ -232,7 +232,7 @@ void updateBody() {
 			dists[4] = lennardJones(distance, dists[1]);
 			dists[5] = lennardJones(distance, dists[2]);
 
-			for (l = 0; l < 3; ++l)
+			for (int l = 0; l < 3; ++l)
 			{
 				force[aPosK+l] += dists[3+l];
 				force[aPosI + l] -= dists[3+l];
