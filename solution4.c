@@ -194,6 +194,7 @@ void updateBody() {
 	minDx = std::numeric_limits<double>::max();
 
 	double force[3*NumberOfBodies] = { 0 };//ax,ay,az,...
+  double backtrack[6*NumberOfBodies] = { 0 };
 
 
 	for (int k = 0; k < NumberOfBodies; k++)
@@ -229,6 +230,13 @@ void updateBody() {
 			minDx = std::min(minDx, distance);
 		}
 
+		    int bt=6*k;
+		    for (int ll = 0; ll < 3; ++ll) {
+		      backtrack[bt+ll]=x[k][ll];
+		      backtrack[bt+3+ll]=v[k][ll];
+		    }
+
+
 		x[k][0] += timeStepSize * v[k][0];
 		x[k][1] += timeStepSize * v[k][1];
 		x[k][2] += timeStepSize * v[k][2];
@@ -242,45 +250,40 @@ void updateBody() {
 
 		for (int k = 0; k < NumberOfBodies; ++k)
 		{
-			aPosK = k * NumberOfBodies;
-
-			x[k][0] -= timeStepSize * v[k][0];//1*2=2 -2 14
-			x[k][1] -= timeStepSize * v[k][1];
-			x[k][2] -= timeStepSize * v[k][2];
-
-			v[k][0] -= timeStepSize * force[aPosK] / mass[k];
-			v[k][1] -= timeStepSize * force[aPosK + 1] / mass[k];
-			v[k][2] -= timeStepSize * force[aPosK + 2] / mass[k];
+		      int bt=6*k;
+		      for (int ll = 0; ll < 3; ++ll) 
+		      {
+			x[k][ll]=backtrack[bt+ll];
+			v[k][ll]=backtrack[bt+3+ll];
+		      }
 
 		}
 
-		if (timeStepSize * maxV>=minDx){//worked
+		if (timeStepSize * maxV>=minDx)
+		{//worked
 
 			timeStepSize/=8;//1->1/8
 
 			for (int k = 0; k < NumberOfBodies; ++k)
-		{
-				aPosK = k * NumberOfBodies;
+			{
+			int aPosK = k * 3;
 			x[k][0] += 7*timeStepSize * v[k][0];//14 +  7/8 = 15.70
 			x[k][1] += 7*timeStepSize * v[k][1];
 			x[k][2] += 7*timeStepSize * v[k][2];
-		}
-
-			printf("again rule \n");
-
-			updateBody();
+			}
 
 		}else{
 
-			for (int k = 0; k < NumberOfBodies; ++k)
-		{
-				aPosK = k * NumberOfBodies;
-			x[k][0] += timeStepSize * v[k][0];
-			x[k][1] += timeStepSize * v[k][1];
-			x[k][2] += timeStepSize * v[k][2];
-		}
-			if (minDx<1e-9){
+  			for (int k = 0; k < NumberOfBodies; ++k)
+  			{
+  			int aPosK = k * 3;
+  			x[k][0] += timeStepSize * v[k][0];
+  			x[k][1] += timeStepSize * v[k][1];
+  			x[k][2] += timeStepSize * v[k][2];
+  			}
 
+			if (minDx<1e-9)
+			{
 				// printf("min rule \n");
 				timeStepSize=1e-5;//can be changed based on the experimentation
 
@@ -291,7 +294,7 @@ void updateBody() {
 
 			for (int k = 0; k < NumberOfBodies; ++k)
 			{
-				aPosK = k * NumberOfBodies;
+				int aPosK = k * 3;
 
 				v[k][0] += timeStepSize * force[aPosK] / mass[k];
 				v[k][1] += timeStepSize * force[aPosK + 1] / mass[k];
@@ -304,7 +307,6 @@ void updateBody() {
 		}
 
 	}
-
 /**
  * Main routine.
  *
