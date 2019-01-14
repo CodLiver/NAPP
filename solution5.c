@@ -1,3 +1,4 @@
+
 // Translate this file with
 //
 // g++ -O3 --std=c++11 assignment-2018.c -o assignment
@@ -181,12 +182,13 @@ void printParaviewSnapshot() {
 void updateBody() {
 	maxV = 0.0;
 	minDx = std::numeric_limits<double>::max();
+	// int k,i=0;
 
-	// double acceleration[3*NumberOfBodies] = { 0 };//ax,ay,az,...
+	double acceleration[3*NumberOfBodies] = { 0 };//ax,ay,az,...
 	// double dists[3] = { 0 };//dx,dy,dz
 
-	double *acceleration = new double[3*NumberOfBodies]();
-	double *dists = new double[3]();
+	// double *acceleration = new double[3*NumberOfBodies]();
+	// double *dists = new double[3]();
 
 
 	/*int aPosK = 0;
@@ -195,45 +197,37 @@ void updateBody() {
 	double mKdiv = 0.0;
 	double divver=0.0;*/
 
-	omp_set_num_threads(1);//NumberOfBodies-
+	// omp_set_num_threads(NumberOfBodies-1);//NumberOfBodies-
 
+	//#pragma omp parallel for num_threads(NumberOfBodies-1)
+	#pragma omp parallel for //private(i,k)
 	for (int k = 0; k < NumberOfBodies; k++)
 	{
 		int aPosK = k * NumberOfBodies;
-
-
-		#pragma omp parallel for private(dists)
 		for (int i = k+1; i < NumberOfBodies; i++) {
 			int aPosI = i * NumberOfBodies;
-			printf("here\n");
-			// #pragma omp single
-			// {
 
-					// printf("%d\n", omp_get_num_threads());
-			// }
-
-
-			dists[0] = x[i][0] - x[k][0];//x
-			dists[1] = x[i][1] - x[k][1];//y
-			dists[2] = x[i][2] - x[k][2];//z
+			double dists0 = x[i][0] - x[k][0];//x
+			double dists1 = x[i][1] - x[k][1];//y
+			double dists2 = x[i][2] - x[k][2];//z
 
 			double distance = sqrt(
-				dists[0] * dists[0] +
-				dists[1] * dists[1] +
-				dists[2] * dists[2]
+				dists0 * dists0 +
+				dists1 * dists1 +
+				dists2 * dists2
 			);
 
 			double divver = distance * distance * distance;
 			double mIdiv = mass[i] / divver;
 			double mKdiv = mass[k] / divver;
 
-			acceleration[aPosK] += dists[0] * mIdiv;
-			acceleration[aPosK + 1] += dists[1] * mIdiv;
-			acceleration[aPosK + 2] += dists[2] * mIdiv;
+			acceleration[aPosK] += dists0 * mIdiv;
+			acceleration[aPosK + 1] += dists1 * mIdiv;
+			acceleration[aPosK + 2] += dists2 * mIdiv;
 
-			acceleration[aPosI] -= dists[0] * mKdiv;
-			acceleration[aPosI + 1] -= dists[1] * mKdiv;
-			acceleration[aPosI + 2] -= dists[2] * mKdiv;
+			acceleration[aPosI] -= dists0 * mKdiv;
+			acceleration[aPosI + 1] -= dists1 * mKdiv;
+			acceleration[aPosI + 2] -= dists2 * mKdiv;
 
 			minDx = std::min(minDx, distance);
 		}
@@ -248,13 +242,12 @@ void updateBody() {
 		v[k][2] += timeStepSize * acceleration[aPosK + 2];
 
 		maxV = std::max(maxV,std::sqrt(v[k][0] * v[k][0] + v[k][1] * v[k][1] + v[k][2] * v[k][2]));
-
 	}
 
 
 	t += timeStepSize;
-	delete [] dists;
-	delete [] acceleration;
+	// delete [] dists;
+	// delete [] acceleration;
 }
 
 
@@ -285,11 +278,11 @@ int main(int argc, char** argv) {
 
 	setUp(argc, argv);
 
-	//openParaviewVideoFile(); test
+	//openParaviewVideoFile(); //test
 
 	int snapshotCounter = 0;
 	if (t > tPlot) {
-		//printParaviewSnapshot(); test
+		printParaviewSnapshot(); //test
 		std::cout << "plotted initial setup" << std::endl;
 		tPlot = tPlotDelta;
 	}
@@ -302,8 +295,8 @@ int main(int argc, char** argv) {
 		updateBody();
 		timeStepCounter++;
 		if (t >= tPlot) {
-			printf("cur step %d\n",timeStepCounter);
-			//printParaviewSnapshot(); test
+			// printf("cur step %d\n",timeStepCounter);
+			//printParaviewSnapshot(); //test
 			/*std::cout << "plot next snapshot"
 				<< ",\t time step=" << timeStepCounter
 				<< ",\t t=" << t
@@ -319,7 +312,7 @@ int main(int argc, char** argv) {
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
 
 	printf("size: %f\t nsec: %09zu\n", tFinal/tPlotDelta, (end.tv_sec - start.tv_sec) * 1000000000 + end.tv_nsec - start.tv_nsec);
-	//closeParaviewVideoFile(); test
+	//closeParaviewVideoFile(); //test
 
 	return 0;
 }
