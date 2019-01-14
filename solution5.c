@@ -196,16 +196,18 @@ void updateBody() {
 	double mIdiv = 0.0;
 	double mKdiv = 0.0;
 	double divver=0.0;*/
-
+ 	//lessons I learnt during the imp of my first Deep L. n.
 	// omp_set_num_threads(NumberOfBodies-1);//NumberOfBodies-
 
 	//#pragma omp parallel for num_threads(NumberOfBodies-1)
-	#pragma omp parallel for //private(i,k)
+
+	//43 https://www.openmp.org/wp-content/uploads/OpenMP_Examples_4.0.1.pdf
+	#pragma omp parallel for //schedule(static,NumberOfBodies)//private(i,k)
 	for (int k = 0; k < NumberOfBodies; k++)
 	{
-		int aPosK = k * NumberOfBodies;
+		int aPosK = k * 3;
 		for (int i = k+1; i < NumberOfBodies; i++) {
-			int aPosI = i * NumberOfBodies;
+			int aPosI = i * 3;
 
 			double dists0 = x[i][0] - x[k][0];//x
 			double dists1 = x[i][1] - x[k][1];//y
@@ -221,6 +223,10 @@ void updateBody() {
 			double mIdiv = mass[i] / divver;
 			double mKdiv = mass[k] / divver;
 
+			// printf("%d,%d\n",aPosK,aPosI);
+			// double tt = acceleration[aPosK] + dists0 * mIdiv;
+			//
+			// acceleration[aPosK] = tt;
 			acceleration[aPosK] += dists0 * mIdiv;
 			acceleration[aPosK + 1] += dists1 * mIdiv;
 			acceleration[aPosK + 2] += dists2 * mIdiv;
@@ -229,6 +235,7 @@ void updateBody() {
 			acceleration[aPosI + 1] -= dists1 * mKdiv;
 			acceleration[aPosI + 2] -= dists2 * mKdiv;
 
+      // #pragma omp critical
 			minDx = std::min(minDx, distance);
 		}
 
@@ -241,6 +248,7 @@ void updateBody() {
 		v[k][1] += timeStepSize * acceleration[aPosK + 1];
 		v[k][2] += timeStepSize * acceleration[aPosK + 2];
 
+    // #pragma omp critical
 		maxV = std::max(maxV,std::sqrt(v[k][0] * v[k][0] + v[k][1] * v[k][1] + v[k][2] * v[k][2]));
 	}
 
@@ -250,7 +258,7 @@ void updateBody() {
 	// delete [] acceleration;
 }
 
-
+//./assignment1 0.01 100.0  7.0 4.0 10.0 4.0 4.0 4.0 10.0 7.0 3.0 11.0 5.0 2.0 2.0 6.0 9.0 15.0 1.0 4.0 3.0 5.0 9.0 14.0 11.0 9.0 1.0 3.0 3.0 7.0 10.0 8.0 3.0 1.0 4.0 2.0 6.0 8.0 11.0 10.0 0.0 3.0 4.0 1.0 11.0 14.0 5.0 3.0 0.0 1.0 5.0 14.0 9.0 15.0 3.0 4.0 4.0 1.0 9.0 11.0 3.0 2.0 4.0 0.0 10.0 13.0 12.0 3.0 1.0 0.0 5.0 8.0
 /**
  * Main routine.
  *
@@ -282,7 +290,7 @@ int main(int argc, char** argv) {
 
 	int snapshotCounter = 0;
 	if (t > tPlot) {
-		printParaviewSnapshot(); //test
+		//printParaviewSnapshot(); //test
 		std::cout << "plotted initial setup" << std::endl;
 		tPlot = tPlotDelta;
 	}
