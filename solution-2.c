@@ -214,9 +214,9 @@ void updateBody() {
 
 	for (int k = 0; k < NumberOfBodies; ++k)
 	{
-		aPosK = k * NumberOfBodies;
+		aPosK = k * 3;
 		for (int i = k + 1; i < NumberOfBodies; ++i) {
-			aPosI = i * NumberOfBodies;
+			aPosI = i * 3;
 
 
 			dists[0] = x[i][0] - x[k][0];//x
