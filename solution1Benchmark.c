@@ -182,42 +182,36 @@ void updateBody() {
 	minDx = std::numeric_limits<double>::max();
 
 	double acceleration[3*NumberOfBodies] = { 0 };//ax,ay,az,...
-	double dists[3] = { 0 };//dx,dy,dz
-	int aPosK = 0;
-	int aPosI = 0;
-	double mIdiv = 0.0;
-	double mKdiv = 0.0;
-	double divver=0.0;
 
 
 	for (int k = 0; k < NumberOfBodies; k++)
 	{
-		aPosK = k * 3;
+		int aPosK = k * 3;
 		for (int i = k+1; i < NumberOfBodies; i++) {
-			aPosI = i * 3;
+			int aPosI = i * 3;
 
 
-			dists[0] = x[i][0] - x[k][0];//x
-			dists[1] = x[i][1] - x[k][1];//y
-			dists[2] = x[i][2] - x[k][2];//z
+			double dists0 = x[i][0] - x[k][0];//x
+			double dists1 = x[i][1] - x[k][1];//y
+			double dists2 = x[i][2] - x[k][2];//z
 
 			const double distance = sqrt(
-				dists[0] * dists[0] +
-				dists[1] * dists[1] +
-				dists[2] * dists[2]
+				dists0 * dists0 +
+				dists1 * dists1 +
+				dists2 * dists2
 			);
 
-			divver = distance * distance * distance;
-			mIdiv = mass[i] / divver;
-			mKdiv = mass[k] / divver;
+			double divver = distance * distance * distance;
+			double mIdiv = mass[i] / divver;
+			double mKdiv = mass[k] / divver;
 
-			acceleration[aPosK] += dists[0] * mIdiv;
-			acceleration[aPosK + 1] += dists[1] * mIdiv;
-			acceleration[aPosK + 2] += dists[2] * mIdiv;
+			acceleration[aPosK] += dists0 * mIdiv;
+			acceleration[aPosK + 1] += dists1 * mIdiv;
+			acceleration[aPosK + 2] += dists2 * mIdiv;
 
-			acceleration[aPosI] -= dists[0] * mKdiv;
-			acceleration[aPosI + 1] -= dists[1] * mKdiv;
-			acceleration[aPosI + 2] -= dists[2] * mKdiv;
+			acceleration[aPosI] -= dists0 * mKdiv;
+			acceleration[aPosI + 1] -= dists1 * mKdiv;
+			acceleration[aPosI + 2] -= dists2 * mKdiv;
 
 			minDx = std::min(minDx, distance);
 		}
@@ -237,7 +231,6 @@ void updateBody() {
 
 	t += timeStepSize;
 }
-
 
 /**
  * Main routine.
