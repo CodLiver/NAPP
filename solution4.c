@@ -193,58 +193,52 @@ void updateBody() {
 	maxV = 0.0;
 	minDx = std::numeric_limits<double>::max();
 
-	double force[3 * NumberOfBodies] = { 0 };//ax,ay,az,...
-	double dists[6] = { 0 };//dx,dy,dz
-	int aPosK = 0;
-	int aPosI = 0;
-	int l = 0;
-
-	// printf("%f\n", timeStepSize);
-
-		for (int k = 0; k < NumberOfBodies; ++k)
-		{
-			aPosK = k * 3;
-
-			for (int i = k + 1; i < NumberOfBodies; ++i) {
-				aPosI = i * 3;
+	double force[3*NumberOfBodies] = { 0 };//ax,ay,az,...
 
 
-				dists[0] = x[i][0] - x[k][0];//x
-				dists[1] = x[i][1] - x[k][1];//y
-				dists[2] = x[i][2] - x[k][2];//z
+	for (int k = 0; k < NumberOfBodies; k++)
+	{
+		int aPosK = k * 3;
+		double dists[6];
 
-				const double distance = sqrt(
-					dists[0] * dists[0] +
-					dists[1] * dists[1] +
-					dists[2] * dists[2]
-				);
-
-				//#pragma omp parallel
-					dists[3] = lennardJones(distance, dists[0]);
-					dists[4] = lennardJones(distance, dists[1]);
-					dists[5] = lennardJones(distance, dists[2]);
+		for (int i = k+1; i < NumberOfBodies; i++) {
+			int aPosI = i * 3;
 
 
-				for (l = 0; l < 3; ++l)
-				{
-					force[aPosK + l] += dists[3 + l];
-					force[aPosI + l] -= dists[3 + l];
-				}
-				minDx = std::min(minDx, distance);
+			dists[0] = x[i][0] - x[k][0];//x
+			dists[1] = x[i][1] - x[k][1];//y
+			dists[2] = x[i][2] - x[k][2];//z
+
+			const double distance = sqrt(
+				dists[0] * dists[0] +
+				dists[1] * dists[1] +
+				dists[2] * dists[2]
+			);
+
+
+			dists[3] = lennardJones(distance, dists[0]);
+			dists[4] = lennardJones(distance, dists[1]);
+			dists[5] = lennardJones(distance, dists[2]);
+
+			for (int l = 0; l < 3; ++l)
+			{
+				force[aPosK+l] += dists[3+l];
+				force[aPosI + l] -= dists[3+l];
 			}
 
-			x[k][0] += timeStepSize * v[k][0];//15.75 1/8*20>1/4 16
-			x[k][1] += timeStepSize * v[k][1];
-			x[k][2] += timeStepSize * v[k][2];
-
-			v[k][0] += timeStepSize * force[aPosK] / mass[k];//v 2->2.2
-			v[k][1] += timeStepSize * force[aPosK + 1] / mass[k];
-			v[k][2] += timeStepSize * force[aPosK + 2] / mass[k];
-
-			maxV = std::max(maxV, std::sqrt(v[k][0] * v[k][0] + v[k][1] * v[k][1] + v[k][2] * v[k][2]));
-			//printf("reached\n");
+			minDx = std::min(minDx, distance);
 		}
-		// #pragma omp critical
+
+		x[k][0] += timeStepSize * v[k][0];
+		x[k][1] += timeStepSize * v[k][1];
+		x[k][2] += timeStepSize * v[k][2];
+
+		v[k][0] += timeStepSize * force[aPosK] / mass[k];
+		v[k][1] += timeStepSize * force[aPosK + 1] / mass[k];
+		v[k][2] += timeStepSize * force[aPosK + 2] / mass[k];
+
+		maxV = std::max(maxV, std::sqrt(v[k][0] * v[k][0] + v[k][1] * v[k][1] + v[k][2] * v[k][2]));
+	}
 
 		for (int k = 0; k < NumberOfBodies; ++k)
 		{
