@@ -179,84 +179,64 @@ void printParaviewSnapshot() {
 /**
  * This is the only operation you are allowed to change in the assignment.
  */
-void updateBody() {
-	maxV = 0.0;
-	minDx = std::numeric_limits<double>::max();
-	// int k,i=0;
+ void updateBody() {
+ 	maxV = 0.0;
+ 	minDx = std::numeric_limits<double>::max();
 
-	double acceleration[3*NumberOfBodies] = { 0 };//ax,ay,az,...
-	// double dists[3] = { 0 };//dx,dy,dz
+ 	double acceleration[3*NumberOfBodies] = { 0 };//ax,ay,az,...
 
-	// double *acceleration = new double[3*NumberOfBodies]();
-	// double *dists = new double[3]();
+  	//lessons I learnt during the imp of my first Deep L. n.
 
+ 	#pragma omp parallel for
+ 	for (int k = 0; k < NumberOfBodies; k++)
+ 	{
+ 		int aPosK = k * 3;
+ 		for (int i = k+1; i < NumberOfBodies; i++) {
+ 			int aPosI = i * 3;
 
-	/*int aPosK = 0;
-	int aPosI = 0;
-	double mIdiv = 0.0;
-	double mKdiv = 0.0;
-	double divver=0.0;*/
- 	//lessons I learnt during the imp of my first Deep L. n.
-	// omp_set_num_threads(NumberOfBodies-1);//NumberOfBodies-
+ 			double dists0 = x[i][0] - x[k][0];//x
+ 			double dists1 = x[i][1] - x[k][1];//y
+ 			double dists2 = x[i][2] - x[k][2];//z
 
-	//#pragma omp parallel for num_threads(NumberOfBodies-1)
+ 			double distance = sqrt(
+ 				dists0 * dists0 +
+ 				dists1 * dists1 +
+ 				dists2 * dists2
+ 			);
 
-	//43 https://www.openmp.org/wp-content/uploads/OpenMP_Examples_4.0.1.pdf
-	#pragma omp parallel for //schedule(static,NumberOfBodies)//private(i,k)
-	for (int k = 0; k < NumberOfBodies; k++)
-	{
-		int aPosK = k * 3;
-		for (int i = k+1; i < NumberOfBodies; i++) {
-			int aPosI = i * 3;
+ 			double divver = distance * distance * distance;
+ 			double mIdiv = mass[i] / divver;
+ 			double mKdiv = mass[k] / divver;
 
-			double dists0 = x[i][0] - x[k][0];//x
-			double dists1 = x[i][1] - x[k][1];//y
-			double dists2 = x[i][2] - x[k][2];//z
+ 			acceleration[aPosK] += dists0 * mIdiv;
+ 			acceleration[aPosK + 1] += dists1 * mIdiv;
+ 			acceleration[aPosK + 2] += dists2 * mIdiv;
 
-			double distance = sqrt(
-				dists0 * dists0 +
-				dists1 * dists1 +
-				dists2 * dists2
-			);
+ 			acceleration[aPosI] -= dists0 * mKdiv;
+ 			acceleration[aPosI + 1] -= dists1 * mKdiv;
+ 			acceleration[aPosI + 2] -= dists2 * mKdiv;
 
-			double divver = distance * distance * distance;
-			double mIdiv = mass[i] / divver;
-			double mKdiv = mass[k] / divver;
+ 			minDx = std::min(minDx, distance);
+ 		}
 
-			// printf("%d,%d\n",aPosK,aPosI);
-			// double tt = acceleration[aPosK] + dists0 * mIdiv;
-			//
-			// acceleration[aPosK] = tt;
-			acceleration[aPosK] += dists0 * mIdiv;
-			acceleration[aPosK + 1] += dists1 * mIdiv;
-			acceleration[aPosK + 2] += dists2 * mIdiv;
+ 	}
+  	#pragma omp parallel for
+ 	for (int k = 0; k < NumberOfBodies; k++)
+ 	{
+	    int aPosK = k * 3;
+	    x[k][0] += timeStepSize * v[k][0];
+	    x[k][1] += timeStepSize * v[k][1];
+	    x[k][2] += timeStepSize * v[k][2];
 
-			acceleration[aPosI] -= dists0 * mKdiv;
-			acceleration[aPosI + 1] -= dists1 * mKdiv;
-			acceleration[aPosI + 2] -= dists2 * mKdiv;
+	    v[k][0] += timeStepSize * acceleration[aPosK];
+	    v[k][1] += timeStepSize * acceleration[aPosK + 1];
+	    v[k][2] += timeStepSize * acceleration[aPosK + 2];
 
-      // #pragma omp critical
-			minDx = std::min(minDx, distance);
-		}
+	  maxV = std::max(maxV,std::sqrt(v[k][0] * v[k][0] + v[k][1] * v[k][1] + v[k][2] * v[k][2]));
+	  }
 
-		// printf("cur particle %d\n",k);
-		x[k][0] += timeStepSize * v[k][0];
-		x[k][1] += timeStepSize * v[k][1];
-		x[k][2] += timeStepSize * v[k][2];
-
-		v[k][0] += timeStepSize * acceleration[aPosK];
-		v[k][1] += timeStepSize * acceleration[aPosK + 1];
-		v[k][2] += timeStepSize * acceleration[aPosK + 2];
-
-    // #pragma omp critical
-		maxV = std::max(maxV,std::sqrt(v[k][0] * v[k][0] + v[k][1] * v[k][1] + v[k][2] * v[k][2]));
-	}
-
-
-	t += timeStepSize;
-	// delete [] dists;
-	// delete [] acceleration;
-}
+ 	t += timeStepSize;
+ }
 
 //./assignment1 0.01 100.0  7.0 4.0 10.0 4.0 4.0 4.0 10.0 7.0 3.0 11.0 5.0 2.0 2.0 6.0 9.0 15.0 1.0 4.0 3.0 5.0 9.0 14.0 11.0 9.0 1.0 3.0 3.0 7.0 10.0 8.0 3.0 1.0 4.0 2.0 6.0 8.0 11.0 10.0 0.0 3.0 4.0 1.0 11.0 14.0 5.0 3.0 0.0 1.0 5.0 14.0 9.0 15.0 3.0 4.0 4.0 1.0 9.0 11.0 3.0 2.0 4.0 0.0 10.0 13.0 12.0 3.0 1.0 0.0 5.0 8.0
 /**
