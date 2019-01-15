@@ -172,31 +172,6 @@ void printParaviewSnapshot() {
 	videoFile << "<DataSet timestep=\"" << counter << "\" group=\"\" part=\"0\" file=\"" << filename.str() << "\"/>" << std::endl;
 }
 
-double lennardJones(double distance, double x) {
-
-	/*if (distance)
-	{
-		//printf("d %f\n", distance);
-		double e = 3.4e-10;
-		double s = 1.65e-21;
-		double a = pow(s / distance, 6);
-		double b = (24 * e*a) / distance;
-		//printf("res %f\n", 2 * b*a - b);
-		return 2 * b*a - b;//b*(2*a-1);
-	}
-	else {
-		return 0;
-	}*/
-	double distDx = x / (distance*distance);
-	//double e = 1.65e-21;
-	double mult = 3.4e-10*distDx;
-	double mult6 = mult*mult*mult*mult*mult*mult;
-	return (7.92e-20*mult6*distDx)*(mult6 - 0.5);
-		
-	//return (-4 * 3.4e-10*x)*(-12 * pow((1.65e-21*x/ (distance*distance)), 12) + 6 * pow((1.65e-21 *x / (distance*distance)), 6)) / (distance*distance);
-
-
-}
 
 /**
  * This is the only operation you are allowed to change in the assignment.
@@ -228,9 +203,12 @@ void updateBody() {
 			);
 
 
-			dists[3] = lennardJones(distance, dists[0]);
-			dists[4] = lennardJones(distance, dists[1]);
-			dists[5] = lennardJones(distance, dists[2]);
+			for (int kk = 3; kk < 6; kk++) {
+				double distDx = dists[kk-3] / (distance*distance);
+				 double mult = 3.4e-10 *distDx;
+				 double mult6 = mult*mult*mult*mult*mult*mult;
+				 dists[kk]=(7.92e-20*mult6*distDx)*(mult6 - 0.5);
+			}
 
 			for (int l = 0; l < 3; ++l)
 			{
