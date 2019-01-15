@@ -203,17 +203,13 @@ void updateBody() {
 			);
 
 
-			for (int kk = 3; kk < 6; kk++) {
-				double distDx = dists[kk-3] / (distance*distance);
+			for (int kk = 0; kk < 3; kk++) {
+				double distDx = dists[kk] / (distance*distance);
 				 double mult = 3.4e-10 *distDx;
 				 double mult6 = mult*mult*mult*mult*mult*mult;
-				 dists[kk]=(7.92e-20*mult6*distDx)*(mult6 - 0.5);
-			}
-
-			for (int l = 0; l < 3; ++l)
-			{
-				force[aPosK+l] += dists[3+l];
-				force[aPosI + l] -= dists[3+l];
+				 dists[kk+3]=(7.92e-20*mult6*distDx)*(mult6 - 0.5);
+				force[aPosK+kk] += dists[3+kk];
+				force[aPosI + kk] -= dists[3+kk];
 			}
 
 			minDx = std::min(minDx, distance);
