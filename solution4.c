@@ -173,18 +173,6 @@ void printParaviewSnapshot() {
 	videoFile << "<DataSet timestep=\"" << counter << "\" group=\"\" part=\"0\" file=\"" << filename.str() << "\"/>" << std::endl;
 }
 
-double lennardJones(double distance, double x) {
-
-
-	double distDx = x / (distance*distance);
-	double mult = 3.4e-10 *distDx;
-	double mult6 = mult*mult*mult*mult*mult*mult;
-	return (7.92e-20*mult6*distDx)*(mult6 - 0.5);
-
-	//return (-4 * 3.4e-10*x)*(-12 * pow((1.65e-21*x/ (distance*distance)), 12) + 6 * pow((1.65e-21 *x / (distance*distance)), 6)) / (distance*distance);
-
-
-}
 
 /**
  * This is the only operation you are allowed to change in the assignment.
@@ -194,7 +182,7 @@ void updateBody() {
 	minDx = std::numeric_limits<double>::max();
 
 	double force[3*NumberOfBodies] = { 0 };//ax,ay,az,...
-  double backtrack[6*NumberOfBodies] = { 0 };
+  	double backtrack[6*NumberOfBodies] = { 0 };
 
 
 	for (int k = 0; k < NumberOfBodies; k++)
@@ -217,14 +205,13 @@ void updateBody() {
 			);
 
 
-			dists[3] = lennardJones(distance, dists[0]);
-			dists[4] = lennardJones(distance, dists[1]);
-			dists[5] = lennardJones(distance, dists[2]);
-
-			for (int l = 0; l < 3; ++l)
-			{
-				force[aPosK+l] += dists[3+l];
-				force[aPosI + l] -= dists[3+l];
+			for (int kk = 0; kk < 3; kk++) {
+				double distDx = dists[kk] / (distance*distance);
+				 double mult = 3.4e-10 *distDx;
+				 double mult6 = mult*mult*mult*mult*mult*mult;
+				 dists[kk+3]=(7.92e-20*mult6*distDx)*(mult6 - 0.5);
+				force[aPosK+kk] += dists[3+kk];
+				force[aPosI + kk] -= dists[3+kk];
 			}
 
 			minDx = std::min(minDx, distance);
